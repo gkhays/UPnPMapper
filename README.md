@@ -10,3 +10,5 @@ A binary is available to quickly get started. It may be downloaded here: [Archiv
 Once the archive has been downloaded, extract it to a location of your choice. Then double-click on the JAR file -- it is an executable, self-contained JAR.
 
 So far, I have only tested on Windows.
+
+Contains LGPL software from: https://github.com/4thline/cling.
