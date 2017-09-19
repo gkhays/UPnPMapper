@@ -2,9 +2,25 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.gkh.portmapper</groupId>
-	<artifactId>upnp-mapper</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<name>UPnP Discovery</name>
+	<artifactId>upnpdiscovery</artifactId>
+	<version>0.0.1</version>
+	<name>UPnPDiscovery</name>
+	<packaging>jar</packaging>
+	
+	<description>
+		Discover universal plug and play devices on your local network.
+	</description>
+	<url>https://github.com/gkhays/UPnPMapper</url>
+	
+	<organization>
+		<name>GH2</name>
+		<url>http://github.copm/gkhays/UPnPMapper</url>
+	</organization>
+
+	<properties>
+		<project.jdk.version>1.6</project.jdk.version>
+		<mainClass>org.gkh.portmapper.App</mainClass>
+	</properties>	
 
 	<repositories>
 		<repository>
@@ -42,21 +58,64 @@
 			<artifactId>junit</artifactId>
 			<version>4.11</version>
 		</dependency>
+		<dependency>
+			<groupId>org.codehaus.mojo</groupId>
+			<artifactId>exec-maven-plugin</artifactId>
+			<version>1.6.0</version>
+		</dependency>
 	</dependencies>
+	
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.6.0</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>java</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<mainClass>${mainClass}</mainClass>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.1</version>
+				<configuration>
+					<source>${project.jdk.version}</source>
+					<target>${project.jdk.version}</target>
+					<compilerVersion>${project.jdk.version}</compilerVersion>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.4</version>
+				<configuration>
+					<archive>
+						<index>true</index>
+						<manifest>
+							<addClasspath>true</addClasspath>
+							<mainClass>${mainClass}</mainClass>
+						</manifest>
+						<manifestEntries>
+							<SplashScreen-Image>/assets/image/SplashScreen.png</SplashScreen-Image>
+							<Implementation-Vender>GH2</Implementation-Vender>
+							<Implementation-Version>${project.version}</Implementation-Version>
+							<Built-By>${user.name}</Built-By>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
 				<version>2.3</version>
-				<configuration>
-					<createDependencyReducedPom>true</createDependencyReducedPom>
-					<filters>
-						<filter>
-							<artifact>*:*</artifact>
-						</filter>
-					</filters>
-				</configuration>
 				<executions>
 					<execution>
 						<phase>package</phase>
@@ -64,18 +123,86 @@
 							<goal>shade</goal>
 						</goals>
 						<configuration>
-							<transformers>
-								<transformer
-									implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
-								<transformer
-									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>org.gkh.portmapper.App</mainClass>
-								</transformer>
-							</transformers>
+							<finalName>${project.name}-${project.version}</finalName>
 						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>com.akathist.maven.plugins.launch4j</groupId>
+				<artifactId>launch4j-maven-plugin</artifactId>
+				<version>1.7.15</version>
+				<executions>
+					<execution>
+						<configuration>
+							<headerType>gui</headerType>
+							<stayAlive>false</stayAlive>
+							<jar>${project.build.directory}/${project.name}-${project.version}.jar</jar>
+							<outfile>${project.build.directory}/${project.name}-${project.version}.exe</outfile>
+							<classPath>
+								<mainClass>${mainClass}</mainClass>
+								<addDependencies>false</addDependencies>
+								<preCp>anything</preCp>
+							</classPath>
+							<jre>
+								<minVersion>1.6.0</minVersion>
+								<runtimeBits>64/32</runtimeBits>
+							</jre>
+<!-- 							<icon>src/main/resources/assets/image/Icon.ico</icon> -->
+						</configuration>
+						<goals>
+							<goal>launch4j</goal>
+						</goals>
+						<phase>package</phase>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.7</version>
+				<executions>
+					<execution>
+						<id>compile</id>
+						<phase>package</phase>
+						<configuration>
+							<target>
+								<chmod
+									file="${project.build.directory}/${project.name}-${project.version}.jar"
+									perm="ugo+rwx" />
+
+								<mkdir dir="${project.build.directory}/${project.name}.app" />
+								<copy todir="${project.build.directory}/${project.name}.app">
+									<fileset dir="${basedir}/macapp" includes="**" />
+								</copy>
+								<copy
+									file="${project.build.directory}/${project.name}-${project.version}.jar"
+									tofile="${project.build.directory}/${project.name}.app/Contents/Resources/Java/${project.name}.jar" />
+<!-- 								<copy file="${basedir}/src/main/resources/assets/image/Icon.icns" -->
+<!-- 									tofile="${project.build.directory}/${project.name}.app/Contents/Resources/Icon.icns" /> -->
+								<replace
+									file="${project.build.directory}/${project.name}.app/Contents/Info.plist"
+									token="%VERSION%" value="${project.version}" />
+
+								<zip
+									destfile="${project.build.directory}/${project.name}-${project.version}.zip">
+									<zipfileset dir="${project.build.directory}/"
+										includes="${project.name}.app/**"
+										excludes="${project.name}.app/Contents/MacOS/JavaApplicationStub" />
+									<zipfileset dir="${project.build.directory}/"
+										includes="${project.name}.app/Contents/MacOS/JavaApplicationStub"
+										filemode="755" />
+								</zip>
+								<delete dir="{project.build.directory}/${project.name}.app" />
+							</target>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
 					</execution>
 				</executions>
 			</plugin>
 		</plugins>
 	</build>
+	
 </project>
